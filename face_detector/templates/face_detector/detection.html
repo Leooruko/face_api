@@ -1,0 +1,111 @@
+<!-- scan.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Scanner</title>
+    <style>
+        body{
+         width: 100vw;
+         height: 100vh;
+         padding: 0;
+         margin: 0; 
+         background-color: black;           
+        }
+        #captureButton{
+            display: block;
+            position: absolute;  
+            justify-self: center;          
+            place-self: center;
+            left: 40vw;
+            top: 80vh;
+            border-radius: 50px;
+            height: 80px;
+            width: 80px;
+            z-index: 1000;
+        }
+        #cameraContainer{
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;  
+            
+        }
+    </style>
+</head>
+<body>
+    <!-- <h1>Sample Scanner</h1> -->
+    
+    <div id="cameraContainer">        
+        <video id="videoElement" autoplay></video>        
+        <button id="captureButton">Capture</button>
+    </div>
+
+    <canvas id="canvasElement" style="display: none;"></canvas>
+
+    <script>
+        // Get access to the camera and display the video feed
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                var video = document.getElementById('videoElement');
+                video.srcObject = stream;
+            })
+            .catch(function(err) {
+                console.error('Error accessing the camera:', err);
+            });
+
+        // Capture image from video feed and send to backend
+        document.getElementById('captureButton').addEventListener('click', function() {
+            var video = document.getElementById('videoElement');
+            var canvas = document.getElementById('canvasElement');
+            var context = canvas.getContext('2d');
+
+            // Set canvas dimensions to match video feed
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw video frame onto canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas image to base64 data URL
+            var imageDataURL = canvas.toDataURL('image/jpeg');
+            
+            // Send captured image data to server
+            fetch('', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ "image": imageDataURL })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showToast(data.num_faces,3000); // Log the response data
+                // Process the response data as needed
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+        function showToast(message, duration) {
+            var toast = document.createElement('div');
+            toast.textContent = message;
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.backgroundColor = 'orange';
+            toast.style.color = 'white';
+            toast.style.padding = '10px';
+            toast.style.borderRadius = '5px';
+            toast.style.zIndex = '1000';
+            document.body.appendChild(toast);
+
+            setTimeout(function() {
+                document.body.removeChild(toast);
+            }, duration);
+        }
+    </script>
+</body>
+</html>
